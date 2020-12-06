@@ -76,7 +76,7 @@ async def on_message(message):
                     roominfo = '\n' .join(roomsandmembers)
 
                     embed = discord.Embed(title=message.author.name + "があなたのルームに参加しました",description=roominfo,color=discord.Colour.from_rgb(255,0,0))
-                    await host.channel.send(embed=embed)
+                    await host.send(embed=embed)
                     embed = discord.Embed(title=roomlist[roomnum] + "に参加しました！\n    [host : " + eachroommembernames + "]",description=roominfo,color=discord.Colour.from_rgb(255,0,0))
                     await message.channel.send(embed=embed)
 
@@ -223,7 +223,7 @@ async def uno(roomname,membersname,membersid):
     game = True
     while game: #ゲームスタート
 
-
+        random.shuffle(yama)
         whoplay = turnnum%population
         nowplayerid = membersid[whoplay]
         player = client.get_user(nowplayerid)
@@ -283,10 +283,11 @@ async def uno(roomname,membersname,membersid):
                 for x in daseru:
                     strdaseru.append(str(x))
 
-                return message.author.id == nowplayerid and message.content in strdaseru and message.channel.id != 697321149872472107
+                lmc = len(message.content)
+                return message.author.id == nowplayerid and message.content[2:] in strdaseru and message.content[:lmc-1] == "!!"
 
             msg = await client.wait_for('message', check=cardcheck)
-            suteru = msg.content
+            suteru = msg.content[2:]
             suteru = int(suteru)
 
             suteruinfo = playercard[whoplay][int(suteru)]
@@ -298,10 +299,11 @@ async def uno(roomname,membersname,membersid):
                 await player.send(embed=embed)
                 
                 def irocheck(message):
-                    return message.author.id == nowplayerid and message.content in ["0","1","2","3"] and message.channel.id != 697321149872472107
+                    lmc = len(message.content)
+                    return message.author.id == nowplayerid and message.content[2:] in ["0","1","2","3"] and message.content[:lmc-1] == "!!"
 
                 msg = await client.wait_for('message', check=irocheck)
-                iro = msg.content
+                iro = msg.content[2:]
                 iro = int(iro)
 
                 wildcolors = ["rx","bx","yx","gx"]
@@ -357,7 +359,7 @@ async def uno(roomname,membersname,membersid):
                 sendtext = ""
 
                 msg = await client.wait_for('message', check=cardcheck)
-                suteru = msg.content
+                suteru = msg.content[2:]
 
                 if suteru[0] != "Q" and suteru[0] != "q":
 
@@ -372,7 +374,7 @@ async def uno(roomname,membersname,membersid):
                         await player.send(embed=embed)
 
                         msg = await client.wait_for('message', check=irocheck)
-                        iro = msg.content
+                        iro = msg.content[2:]
                         iro = int(iro)
 
                         wildcolors = ["rx","bx","yx","gx"]
@@ -381,7 +383,7 @@ async def uno(roomname,membersname,membersid):
                     elif suteruinfo[1] == "D":
                         drawnext = 2
                         sendtext = "ドロー +" + str(drawnext) + "！"
-                        senop += "\nドロー +" + str(drawnext) + "！"
+                        sendop += "\nドロー +" + str(drawnext) + "！"
                     elif suteruinfo[1] == "R":
                         next = -next
                         sendtext = "リバース！"
@@ -417,6 +419,7 @@ async def uno(roomname,membersname,membersid):
             embed = discord.Embed(title="",description=sendtext,color=discord.Colour.from_rgb(255,0,0))
             await player.send(embed=embed)
 
+            sendop += "\n" + membersname[whoplay] + "さん の残りのカードは" + str(len(playercard[whoplay])) + "枚です"
             for x in range(population):
                 if nowplayerid != membersid[x]:
                     opponent = client.get_user(membersid[x])
