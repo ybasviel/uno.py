@@ -67,8 +67,21 @@ async def on_message(message):
                     eachroommembernames = ', ' .join(roommemberlist[roomnum])
 
                     host = client.get_user(roommemberid[roomnum][0])
-                    await host.send(message.author.name + "があなたのルームに参加しました")
-                    await message.channel.send(roomlist[roomnum] + "に参加しました！\n    [host : " + eachroommembernames + "]")
+
+                    roomsandmembers = []
+                    for x in range(len(roomlist)):
+                        eachroommember = ',' .join(roommemberlist[x])
+                        roomsandmembers.append(str(x) + " : " + roomlist[x] + "\n    [" + eachroommember + "]")
+
+                    roominfo = '\n' .join(roomsandmembers)
+
+                    embed = discord.Embed(title=message.author.name + "があなたのルームに参加しました",description=roominfo,color=discord.Colour.from_rgb(255,0,0))
+                    await host.channel.send(embed=embed)
+                    embed = discord.Embed(title=roomlist[roomnum] + "に参加しました！\n    [host : " + eachroommembernames + "]",description=roominfo,color=discord.Colour.from_rgb(255,0,0))
+                    await message.channel.send(embed=embed)
+
+                    #await host.send(message.author.name + "があなたのルームに参加しました")
+                    #await message.channel.send(roomlist[roomnum] + "に参加しました！\n    [host : " + eachroommembernames + "]")
 
 
 
@@ -252,11 +265,11 @@ async def uno(roomname,membersname,membersid):
             await player.send(embed=embed)
 
             for x in range(population):
-            if nowplayerid != membersid[x]:
-                opponent = client.get_user(membersid[x])
-                sendop = membersname[whoplay] + " さん がパスしました"
-                embed = discord.Embed(title=sendop,description="",color=discord.Colour.from_rgb(255,0,0))
-                await opponent.send(embed=embed)
+                if nowplayerid != membersid[x]:
+                    opponent = client.get_user(membersid[x])
+                    sendop = membersname[whoplay] + " さん がパスしました"
+                    embed = discord.Embed(title=sendop,description="",color=discord.Colour.from_rgb(255,0,0))
+                    await opponent.send(embed=embed)
 
         else:
 
@@ -405,10 +418,10 @@ async def uno(roomname,membersname,membersid):
             await player.send(embed=embed)
 
             for x in range(population):
-            if nowplayerid != membersid[x]:
-                opponent = client.get_user(membersid[x])
-                embed = discord.Embed(title=sendop,description="",color=discord.Colour.from_rgb(255,0,0))
-                await opponent.send(embed=embed)
+                if nowplayerid != membersid[x]:
+                    opponent = client.get_user(membersid[x])
+                    embed = discord.Embed(title=sendop,description="",color=discord.Colour.from_rgb(255,0,0))
+                    await opponent.send(embed=embed)
 
         for x in range(population):
             if playercard[x] == []:
