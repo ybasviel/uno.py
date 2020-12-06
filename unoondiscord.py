@@ -9,9 +9,9 @@ with open("bot.token") as tokenfile:
 # 接続に必要なオブジェクトを生成
 client = discord.Client()
 
-roomlist = ["roomA","roomB"]
-roommemberlist = [["a","b","c"],["abc","def"]]
-roommemberid = [[123,456,789],[234,678]]
+roomlist = []
+roommemberlist = [[]]
+roommemberid = [[]]
 
 # 起動時に動作する処理
 @client.event
