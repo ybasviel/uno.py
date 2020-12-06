@@ -10,8 +10,8 @@ with open("bot.token") as tokenfile:
 client = discord.Client()
 
 roomlist = []
-roommemberlist = [[]]
-roommemberid = [[]]
+roommemberlist = []
+roommemberid = []
 
 # 起動時に動作する処理
 @client.event
@@ -48,7 +48,7 @@ async def on_message(message):
 
             error = False
             for x in range(len(roommemberid)):
-                if message.author.id in x:
+                if message.author.id in roommemberid[x]:
                     error = True
             
             if error:
@@ -210,89 +210,117 @@ async def uno(roomname,membersname,membersid):
     game = True
     while game: #ゲームスタート
 
-        nowplayerid = membersid[turnnum%population]
+
+        whoplay = turnnum%population
+        nowplayerid = membersid[whoplay]
         player = client.get_user(nowplayerid)
+
+        for x in range(population):
+            if nowplayerid != membersid[x]:
+                opponent = client.get_user(membersid[x])
+                sendtext = membersname[whoplay] + " さんのターンです"
+                embed = discord.Embed(title=sendtext,description="",color=discord.Colour.from_rgb(255,0,0))
+                await opponent.send(embed=embed)
         
         for i in range(drawnext):
-            playercard[turnnum%population].append(yama.pop())
+            playercard[whoplay].append(yama.pop())
     
         drawnext = 0
 
         daseru = []
 
-        tefudanum = len(playercard[turnnum%population])
+        tefudanum = len(playercard[whoplay])
 
         sendtext = "    場にあるのは\n" + ba + "です．どれを捨てますか(番号で選択)\n"
 
         for x in range(tefudanum):
-            tefudainfo = playercard[turnnum%population][x]
+            tefudainfo = playercard[whoplay][x]
             if ba[0] == tefudainfo[0] or ba[1] == tefudainfo[1] or "x" == tefudainfo[1]:
-                sendtext += "[" + str(x) + "]:" + playercard[turnnum%population][x] + "  "
+                sendtext += "[" + str(x) + "]:" + playercard[whoplay][x] + "  "
                 daseru.append(x)
             else:
-                sendtext += "[E]:" + playercard[turnnum%population][x] + "  "
+                sendtext += "[E]:" + playercard[whoplay][x] + "  "
 
         if len(daseru) == 0:
-            playercard[turnnum%population].append(yama.pop())
+            playercard[whoplay].append(yama.pop())
             sendtext += "\n    出せる手札がないのでパスします．\n    引いた手札は"
 
-            tefudainfo = playercard[turnnum%population][-1]
-            sendtext += playercard[turnnum%population][tefudanum] + "です．"
+            tefudainfo = playercard[whoplay][-1]
+            sendtext += playercard[whoplay][tefudanum] + "です．"
 
             embed = discord.Embed(title="あなたのターンです",description=sendtext,color=discord.Colour.from_rgb(255,0,0))
             await player.send(embed=embed)
+
+            for x in range(population):
+            if nowplayerid != membersid[x]:
+                opponent = client.get_user(membersid[x])
+                sendop = membersname[whoplay] + " さん がパスしました"
+                embed = discord.Embed(title=sendop,description="",color=discord.Colour.from_rgb(255,0,0))
+                await opponent.send(embed=embed)
 
         else:
 
             embed = discord.Embed(title="あなたのターンです",description=sendtext,color=discord.Colour.from_rgb(255,0,0))
             await player.send(embed=embed)
             sendtext = ""
+            sendop = ""
 
             def cardcheck(message):
-                return message.author.id == nowplayerid and int(message.content) in daseru
+                strdaseru = ["q","Q"]
+                for x in daseru:
+                    strdaseru.append(str(x))
+
+                return message.author.id == nowplayerid and message.content in strdaseru and message.channel.id != 697321149872472107
 
             msg = await client.wait_for('message', check=cardcheck)
             suteru = msg.content
             suteru = int(suteru)
 
-            suteruinfo = playercard[turnnum%population][int(suteru)]
+            suteruinfo = playercard[whoplay][int(suteru)]
 
             if suteruinfo[0] == "W":
 
-                await player.send("どの色にしますか(数字で選択)\n[0]:red [1]:blue [2]:yellow [3]:green")
+                choicecolour = "どの色にしますか(数字で選択)\n[0]:red [1]:blue [2]:yellow [3]:green"
+                embed = discord.Embed(title=sendop,description=choicecolour,color=discord.Colour.from_rgb(255,0,0))
+                await player.send(embed=embed)
                 
                 def irocheck(message):
-                    return message.author.id == nowplayerid and message.content in ["0","1","2","3"]
+                    return message.author.id == nowplayerid and message.content in ["0","1","2","3"] and message.channel.id != 697321149872472107
 
                 msg = await client.wait_for('message', check=irocheck)
                 iro = msg.content
                 iro = int(iro)
 
                 wildcolors = ["rx","bx","yx","gx"]
-                playercard[turnnum%population][suteru] = wildcolors[iro]
+                playercard[whoplay][suteru] = wildcolors[iro]
 
             elif suteruinfo[1] == "D":
                 drawnext = 2
                 sendtext = "ドロー +" + str(drawnext) + "！"
+                sendop = "ドロー +" + str(drawnext) + "！"
             elif suteruinfo[1] == "R":
                 next = -next
                 sendtext = "リバース！"
+                sendop = "リバース！"
             elif suteruinfo[1] == "S":
                 turnnum += next
                 sendtext = "スキップ！"
+                sendop = "スキップ！"
 
             yama.insert(0,ba)
-            ba = playercard[turnnum%population][suteru]
-            del playercard[turnnum%population][suteru]
+            ba = playercard[whoplay][suteru]
+            del playercard[whoplay][suteru]
+
+            sendop += "\n" + membersname[whoplay] + " さん が" + ba + "を捨てました"
 
             #連続投下
 
             daseru = []
 
-            tefudanum = len(playercard[turnnum%population])
+            tefudanum = len(playercard[whoplay])
 
             for x in range(tefudanum):
-                tefudainfo = playercard[turnnum%population][x]
+                tefudainfo = playercard[whoplay][x]
                 if ba[1:] == tefudainfo[1:]:
                     daseru.append(x)
 
@@ -302,17 +330,18 @@ async def uno(roomname,membersname,membersid):
 
                 sendtext += "\n  あなたが捨てたのは" + ba + "です．続けて捨てますか(番号で選択)\n"
                 for x in range(tefudanum):
-                    tefudainfo = playercard[turnnum%population][x]
+                    tefudainfo = playercard[whoplay][x]
                     if ba[1] == tefudainfo[1]:
-                        sendtext += "[" + str(x) + "]:" + playercard[turnnum%population][x] + "  "
+                        sendtext += "[" + str(x) + "]:" + playercard[whoplay][x] + "  "
                         #daseru.append(x)
                     else:
-                        sendtext += "[E]:" + playercard[turnnum%population][x] + "  "
+                        sendtext += "[E]:" + playercard[whoplay][x] + "  "
 
                 sendtext += "[Q]:捨てない"
 
                 embed = discord.Embed(title="",description=sendtext,color=discord.Colour.from_rgb(255,0,0))
                 await player.send(embed=embed)
+                sendtext = ""
 
                 msg = await client.wait_for('message', check=cardcheck)
                 suteru = msg.content
@@ -320,57 +349,71 @@ async def uno(roomname,membersname,membersid):
                 if suteru[0] != "Q" and suteru[0] != "q":
 
                     suteru = int(suteru)
-                    suteruinfo = playercard[turnnum%population][suteru]
+                    suteruinfo = playercard[whoplay][suteru]
 
                     if suteruinfo[0] == "W":
 
-                        await player.send("どの色にしますか(数字で選択)\n[0]:red [1]:blue [2]:yellow [3]:green")
+                        sendtext = "どの色にしますか(数字で選択)\n[0]:red [1]:blue [2]:yellow [3]:green"
 
-                        def irocheck(message):
-                            return message.author.id == nowplayerid and message.content in ["0","1","2","3"]
+                        embed = discord.Embed(title="",description=sendtext,color=discord.Colour.from_rgb(255,0,0))
+                        await player.send(embed=embed)
 
                         msg = await client.wait_for('message', check=irocheck)
                         iro = msg.content
                         iro = int(iro)
 
                         wildcolors = ["rx","bx","yx","gx"]
-                        playercard[turnnum%population][suteru] = wildcolors[iro]
+                        playercard[whoplay][suteru] = wildcolors[iro]
 
                     elif suteruinfo[1] == "D":
                         drawnext = 2
                         sendtext = "ドロー +" + str(drawnext) + "！"
+                        senop += "\nドロー +" + str(drawnext) + "！"
                     elif suteruinfo[1] == "R":
                         next = -next
                         sendtext = "リバース！"
+                        sendop += "\nリバース！"
                     elif suteruinfo[1] == "S":
                         turnnum += next
                         sendtext = "スキップ！"
+                        sendop += "\nスキップ！"
 
 
                     #まだ出せるかチェック
                     yama.insert(0,ba)
-                    ba = playercard[turnnum%population][suteru]
-                    del playercard[turnnum%population][suteru]
+                    ba = playercard[whoplay][suteru]
+                    del playercard[whoplay][suteru]
+
+                    sendop += "\n続けて" + ba + "を捨てました"
 
                     daseru = []
 
-                    tefudanum = len(playercard[turnnum%population])
+                    tefudanum = len(playercard[whoplay])
 
                     for x in range(tefudanum):
-                        tefudainfo = playercard[turnnum%population][x]
+                        tefudainfo = playercard[whoplay][x]
                         if ba[1] == tefudainfo[1]:
                             daseru.append(x)
 
 
                 else:
                     daseru = []
+                    sendtext = ""
 
             sendtext += "\n  あなたが捨てたのは" + ba + "です．"
-            await player.send(sendtext)
+            embed = discord.Embed(title="",description=sendtext,color=discord.Colour.from_rgb(255,0,0))
+            await player.send(embed=embed)
+
+            for x in range(population):
+            if nowplayerid != membersid[x]:
+                opponent = client.get_user(membersid[x])
+                embed = discord.Embed(title=sendop,description="",color=discord.Colour.from_rgb(255,0,0))
+                await opponent.send(embed=embed)
 
         for x in range(population):
             if playercard[x] == []:
                 game = False
+                finish = x
 
         turnnum += next
 
@@ -378,10 +421,12 @@ async def uno(roomname,membersname,membersid):
     for x in range(population):
         player = client.get_user(membersid[x])
 
-        if x == turnnum:
-            await player.send("あなたの勝ちです")
+        if x == finish:
+            embed = discord.Embed(title="YOU WIN!!",description="あなたの勝ちです",color=discord.Colour.from_rgb(255,0,0))
+            await player.send(embed=embed)
         else:
-            await player.send( membersname[turnnum] + "さん の勝ちです")
+            embed = discord.Embed(title="YOU LOSE!!",description=membersname[finish] + "さん の勝ちです",color=discord.Colour.from_rgb(255,0,0))
+            await player.send(embed=embed)
 
 
 
